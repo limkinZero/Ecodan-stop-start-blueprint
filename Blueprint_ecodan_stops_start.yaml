@@ -1,0 +1,113 @@
+blueprint:
+  name: Control de paradas por consumo bajo y re arranque tras un periodo de apagado
+  description: >
+    Monitoriza un sensor de consumo (W) de la Ecodan y apaga un dispositivo si detecta múltiples paradas
+    (consumo por debajo del umbral) en un periodo de tiempo y manda una notificación. Pasado el tiempo de stand by, la vuelve a encender. Se excluye el estado de desescarche.
+    NOTA: Es necesario tener creados los helpers de contador de paradas (input_number.[nombre_dispositivo]_paradas_contador) y el timer con el temporizador (timer.[nombre_dispositivo]_monitor_tiempo)
+  domain: automation
+  input:
+    sensor_potencia:
+      name: Sensor de consumo de la Ecodan
+      description: Sensor que mide el consumo en vatios (W)
+      selector:
+        entity:
+          domain: sensor
+    umbral_consumo:
+      name: Umbral de consumo
+      description: Valor en vatios (W) por debajo del cual se considera una parada
+      default: 100
+      selector:
+        number:
+          min: 0
+          max: 10000
+          unit_of_measurement: W
+    switch_dispositivo:
+      name: Switch del dispositivo
+      description: Entidad que apaga y enciende la Ecodan
+      selector:
+        entity:
+          domain: switch
+    sensor_desescarche:
+      name: Sensor modo desescarche
+      description: Sensor booleano que indica si la aerotermia está en desescarche
+      selector:
+        entity:
+          domain: binary_sensor
+    notificador:
+      name: Servicio de notificación
+      description: Servicio para enviar una notificación persistente
+      selector:
+        text:
+    nombre_dispositivo:
+      name: Nombre del dispositivo
+      description: Nombre amigable del dispositivo (para logs y helpers)
+      default: "mitsubishi_ecodan"
+      selector:
+        text:
+    tiempo_apagado:
+      name: Tiempo de apagado
+      description: Cuánto tiempo mantener el dispositivo apagado antes de volver a encenderlo
+      default: "02:00:00"
+      selector:
+        text:
+    tiempo_monitorizacion:
+      name: Tiempo de monitorización
+      description: Duración del periodo para contar paradas
+      default: "00:30:00"
+      selector:
+        text:
+
+trigger:
+  - platform: numeric_state
+    entity_id: !input sensor_potencia
+    below: !input umbral_consumo
+    for:
+      seconds: 30
+
+condition:
+  - condition: state
+    entity_id: !input sensor_desescarche
+    state: "off"
+
+action:
+  - variables:
+      contador_id: "input_number.{{ nombre_dispositivo | lower | replace(' ', '_') }}_paradas_contador"
+      temporizador_id: "timer.{{ nombre_dispositivo | lower | replace(' ', '_') }}_monitor_tiempo"
+  - service: input_number.increment
+    target:
+      entity_id: "{{ contador_id }}"
+  - condition: template
+    value_template: >
+      {{ is_state(temporizador_id, 'idle') }}
+  - service: timer.start
+    target:
+      entity_id: "{{ temporizador_id }}"
+    data:
+      duration: !input tiempo_monitorizacion
+  - wait_for_trigger:
+      - platform: event
+        event_type: timer.finished
+        event_data:
+          entity_id: "{{ temporizador_id }}"
+  - condition: template
+    value_template: >
+      {{ states(contador_id) | float >= 3 }}
+  - service: switch.turn_off
+    target:
+      entity_id: !input switch_dispositivo
+  - service: "{{ notificador }}"
+    data:
+      message: "⚠️ {{ nombre_dispositivo }} ha sido apagado por exceder el número de paradas en el intervalo de {{ tiempo_monitorizacion }}. Se encenderá depués de {{ tiempo_apagado }} horas"
+      title: "{{ nombre_dispositivo }} apagado por seguridad"
+      data:
+        tag: "{{ nombre_dispositivo }}_apagado"
+        persistent: true
+  - delay: !input tiempo_apagado
+  - service: switch.turn_on
+    target:
+      entity_id: !input switch_dispositivo
+  - service: input_number.set_value
+    data:
+      value: 0
+    target:
+      entity_id: "{{ contador_id }}"

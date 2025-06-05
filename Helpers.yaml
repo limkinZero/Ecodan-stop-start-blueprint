@@ -1,0 +1,12 @@
+input_number:
+  mitsubishi_ecodan_paradas_contador:
+    name: Contador de paradas Mitsubishi Ecodan
+    min: 0
+    max: 20
+    step: 1
+    initial: 0
+
+timer:
+  mitsubishi_ecodan_monitor_tiempo:
+    name: Rango temporal para el control del número de paradas
+    duration: "00:30:00"
