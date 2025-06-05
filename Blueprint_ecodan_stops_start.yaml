@@ -13,6 +13,8 @@ blueprint:
     - Temporizador para la monitorización (`timer.[nombre_dispositivo]_monitor_tiempo`)
   
   domain: automation
+  author: https://github.com/limkinZero
+  min_version: 2024.6.0
   input:
     sensor_potencia:
       name: Sensor de consumo de la Ecodan
@@ -56,14 +58,12 @@ blueprint:
     tiempo_apagado:
       name: Tiempo de apagado
       description: Cuánto tiempo mantener el dispositivo apagado antes de volver a encenderlo
-#      default: 02:00:00
       selector:
         duration:
           hours: 2
     tiempo_monitorizacion:
       name: Tiempo de monitorización
       description: Duración del periodo para contar paradas
-#      default: 00:30:00
       selector:
         duration:
           minutes: 30
@@ -82,8 +82,8 @@ condition:
 
 action:
   - variables:
-      contador_id: "'input_number' ~ {{ inputs.nombre_dispositivo | lower | replace(' ', '_') }} ~ '_paradas_contador'"
-      temporizador_id: "'timer.' ~ {{ inputs.nombre_dispositivo | lower | replace(' ', '_') }} ~ '_monitor_tiempo'"
+      contador_id: "{{ 'input_number.' ~ inputs.nombre_dispositivo | lower | replace(' ', '_') ~ '_paradas_contador' }}"
+      temporizador_id: "{{ 'timer.' ~ inputs.nombre_dispositivo | lower | replace(' ', '_') ~ '_monitor_tiempo' }}"
   - service: input_number.increment
     target:
       entity_id: "{{ contador_id }}"
@@ -108,11 +108,11 @@ action:
       entity_id: !input switch_dispositivo
   - service: notify.mobile_app_{{ device_attr(notificador, 'name') | lower | replace(' ', '_') }}
     data:
-      message: "⚠️ {{ nombre_dispositivo }} ha sido apagado por exceder el número de paradas en el intervalo de {{ tiempo_monitorizacion }}. Se encenderá depués de {{ tiempo_apagado }} horas"
-      title: "{{ nombre_dispositivo }} apagado por seguridad"
+      message: "⚠️ {{ inputs.nombre_dispositivo }} ha sido apagado por exceder el número de paradas en el intervalo de {{ tiempo_monitorizacion }}. Se encenderá depués de {{ tiempo_apagado }} horas"
+      title: "{{ inputs.nombre_dispositivo }} apagado por seguridad"
       data:
-        tag: "{{ nombre_dispositivo }}_apagado"
-        persistent: true
+      tag: "{{ inputs.nombre_dispositivo | lower | replace(' ', '_') }}_apagado"
+      persistent: true
   - delay: !input tiempo_apagado
   - service: switch.turn_on
     target:
