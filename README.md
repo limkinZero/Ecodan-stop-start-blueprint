@@ -30,3 +30,21 @@ En el campo de URL, pega la siguiente dirección:
 
 https://gist.github.com/limkinZero/Ecodan-stop-start-blueprint/blob/main/Blueprint_ecodan_stops_start
 
+
+⚙️ Configurar blueprint
+
+Al crear una nueva automatización basada en el blueprint, se te solicitará que completes los siguientes campos:
+
+- Sensor de potencia: Selecciona el sensor que mide el consumo de la Mitsubishi Ecodan.
+
+- Umbral de consumo (W): Establece el valor en 100.
+
+- Interruptor del dispositivo: Selecciona el switch que controla la alimentación de la Mitsubishi Ecodan.
+
+- Sensor binario de desescarche: Selecciona el sensor que indica si el dispositivo está en modo desescarche.
+
+- Servicio de notificación móvil: Introduce el servicio de notificación que utilizas, por ejemplo, notify.mobile_app_tu_telefono.
+
+- Nombre del dispositivo: Introduce Mitsubishi Ecodan.
+
+' Tiempo de apagado antes de encender (HH:MM:SS): Establece el tiempo deseado, por ejemplo, 02:00:00.
