@@ -5,7 +5,9 @@ blueprint:
     (consumo por debajo del umbral) en un periodo de tiempo y manda una notificación. Pasado el tiempo de stand by, la vuelve a encender. Se excluye el estado de desescarche.
     
     
-    ℹ️ **NOTA:** Es necesario tener creados los helpers de contador de paradas (input_number.[nombre_dispositivo]_paradas_contador) y el timer con el temporizador (timer.[nombre_dispositivo]_monitor_tiempo)
+    ℹ️ **NOTA:** Es necesario tener creados los siguientes helpers:
+    - Contador de paradas (`input_number.[nombre_dispositivo]_paradas_contador`)
+    - Temporizador para la monitorización (`timer.[nombre_dispositivo]_monitor_tiempo`)
   
   domain: automation
   input:

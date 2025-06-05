@@ -28,7 +28,7 @@ Haz clic en el botón "Importar Blueprint" en la esquina inferior derecha.
 
 En el campo de URL, pega la siguiente dirección:
 
-https://gist.github.com/limkinZero/Ecodan-stop-start-blueprint/blob/main/Blueprint_ecodan_stops_start
+https://github.com/limkinZero/Ecodan-stop-start-blueprint/blob/main/Blueprint_ecodan_stops_start.yaml
 
 
 ⚙️ Configurar blueprint
