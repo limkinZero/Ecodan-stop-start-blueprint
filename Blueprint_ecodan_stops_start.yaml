@@ -43,9 +43,10 @@ blueprint:
           domain: binary_sensor
     notificador:
       name: Servicio de notificación
-      description: Servicio para enviar una notificación persistente
+      description: Servicio para enviar una notificación persistente a un teléfono
       selector:
-        text:
+        device:
+          integration: mobile_app
     nombre_dispositivo:
       name: Nombre del dispositivo
       description: Nombre amigable del dispositivo (para logs y helpers)
@@ -103,7 +104,7 @@ action:
   - service: switch.turn_off
     target:
       entity_id: !input switch_dispositivo
-  - service: "{{ notificador }}"
+  - service: notify.mobile_app_{{ device_attr(notificador, 'name') | lower | replace(' ', '_') }}
     data:
       message: "⚠️ {{ nombre_dispositivo }} ha sido apagado por exceder el número de paradas en el intervalo de {{ tiempo_monitorizacion }}. Se encenderá depués de {{ tiempo_apagado }} horas"
       title: "{{ nombre_dispositivo }} apagado por seguridad"
