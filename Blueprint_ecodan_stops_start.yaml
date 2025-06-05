@@ -50,7 +50,7 @@ blueprint:
     nombre_dispositivo:
       name: Nombre del dispositivo
       description: Nombre amigable del dispositivo (para logs y helpers)
-      default: mitsubishi ecodan
+      default: "mitsubishi ecodan"
       selector:
         text:
     tiempo_apagado:
@@ -58,13 +58,13 @@ blueprint:
       description: Cuánto tiempo mantener el dispositivo apagado antes de volver a encenderlo
       default: "02:00:00"
       selector:
-        text:
+        duration:
     tiempo_monitorizacion:
       name: Tiempo de monitorización
       description: Duración del periodo para contar paradas
       default: "00:30:00"
       selector:
-        text:
+        duration:
 
 trigger:
   - platform: numeric_state
@@ -80,8 +80,8 @@ condition:
 
 action:
   - variables:
-      contador_id: "input_number.{{ nombre_dispositivo | lower | replace(' ', '_') }}_paradas_contador"
-      temporizador_id: "timer.{{ nombre_dispositivo | lower | replace(' ', '_') }}_monitor_tiempo"
+      contador_id: "'input_number' ~ {{ inputs.nombre_dispositivo | lower | replace(' ', '_') }} ~ '_paradas_contador'"
+      temporizador_id: "'timer.' ~ {{ inputs.nombre_dispositivo | lower | replace(' ', '_') }} ~ '_monitor_tiempo'"
   - service: input_number.increment
     target:
       entity_id: "{{ contador_id }}"
