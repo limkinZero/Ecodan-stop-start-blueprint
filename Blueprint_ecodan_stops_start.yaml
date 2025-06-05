@@ -50,7 +50,7 @@ blueprint:
     nombre_dispositivo:
       name: Nombre del dispositivo
       description: Nombre amigable del dispositivo (para logs y helpers)
-      default: "mitsubishi_ecodan"
+      default: "mitsubishi ecodan"
       selector:
         text:
     tiempo_apagado:
