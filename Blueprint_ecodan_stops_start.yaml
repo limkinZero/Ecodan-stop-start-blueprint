@@ -14,7 +14,8 @@ blueprint:
   
   domain: automation
   author: https://github.com/limkinZero
-  min_version: 2024.6.0
+  homeassistant:
+    min_version: 2024.6.0
   input:
     sensor_potencia:
       name: Sensor de consumo de la Ecodan
@@ -58,15 +59,15 @@ blueprint:
     tiempo_apagado:
       name: Tiempo de apagado
       description: Cuánto tiempo mantener el dispositivo apagado antes de volver a encenderlo
+      default: 2:00:00
       selector:
         duration:
-          hours: 2
     tiempo_monitorizacion:
       name: Tiempo de monitorización
       description: Duración del periodo para contar paradas
+      default: 0:30:00
       selector:
         duration:
-          minutes: 30
 
 trigger:
   - platform: numeric_state
