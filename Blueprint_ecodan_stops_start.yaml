@@ -83,8 +83,9 @@ condition:
 
 action:
   - variables:
-      contador_id: "{{ 'input_number.' ~ (inputs.nombre_dispositivo | lower | replace(' ', '_')) ~ '_paradas_contador' }}"
-      temporizador_id: "{{ 'timer.' ~ (inputs.nombre_dispositivo | lower | replace(' ', '_')) ~ '_monitor_tiempo' }}"
+      device_name: "{{ nombre_dispositivo | lower | replace(' ', '_') }}"
+      contador_id: "{{ 'input_number.' ~ device_name ~ '_paradas_contador' }}"
+      temporizador_id: "{{ 'timer.' ~ device_name ~ '_monitor_tiempo' }}"
   - service: input_number.increment
     target:
       entity_id: "{{ contador_id }}"
