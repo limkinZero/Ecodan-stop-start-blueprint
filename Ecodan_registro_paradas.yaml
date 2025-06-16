@@ -1,0 +1,108 @@
+blueprint:
+  name: Registro de paradas por consumo
+  description: >
+    Incrementa un contador si el consumo (W) cae por debajo de un umbral partiendo de un valor superior,
+    indicando una parada. Si el temporizador de monitorización está inactivo, lo inicia.
+    
+    
+    ℹ️ **NOTA:** Es necesario tener creados los siguientes helpers:
+    
+    
+    - Contador de paradas (`counter.[nombre_dispositivo]_paradas_contador`)
+    
+    - Temporizador para la monitorización (`timer.[nombre_dispositivo]_monitor_tiempo`)
+    
+  domain: automation
+  author: https://github.com/limkinZero
+  homeassistant:
+    min_version: 2024.6.0    
+  input:
+    sensor_potencia:
+      name: Sensor de consumo de la Ecodan
+      description: Sensor que mide el consumo en vatios (W)
+      selector:
+        entity:
+          domain: sensor
+
+    sensor_desescarche:
+      name: Sensor modo desescarche
+      description: Sensor booleano que indica si la aerotermia está en desescarche
+      selector:
+        entity:
+          domain: binary_sensor
+
+    umbral_consumo:
+      name: Umbral de consumo
+      description: Valor en vatios (W) por debajo del cual se considera una parada
+      default: 100
+      selector:
+        number:
+          min: 0
+          max: 10000
+          unit_of_measurement: W
+
+    umbral_activacion:
+      name: Umbral de activación
+      description: Valor de W anterior al descenso (ej. >400W → <100W) para considerar que realmente estaba funcionando antes
+      default: 400
+      selector:
+        number:
+          min: 0
+          max: 10000
+          unit_of_measurement: W
+
+    nombre_dispositivo:
+      name: Nombre del dispositivo
+      description: Nombre amigable del dispositivo (para logs y helpers)
+      default: 'Mitsubishi Ecodan'
+      selector:
+        text:
+
+    tiempo_monitorizacion:
+      name: Tiempo de monitorización
+      description: Duración del periodo para contar paradas
+      default:
+        hours: 0
+        minutes: 30
+        seconds: 0
+      selector:
+        duration:
+
+trigger:
+  - platform: state
+    entity_id: !input sensor_potencia
+
+variables:
+  umbral: !input umbral_consumo
+  umbral_activacion: !input umbral_activacion
+  device_name: !input nombre_dispositivo
+  device_normalized_name: "{{ device_name | lower | replace(' ', '_') }}"
+  contador_id: "counter.{{ device_normalized_name }}_paradas_contador"
+  temporizador_id: "timer.{{ device_normalized_name }}_monitor_tiempo"
+
+condition:
+  - condition: template
+    value_template: >
+      {{ trigger.from_state.state is not none and trigger.to_state.state is not none and
+         trigger.from_state.state not in ['unknown', 'unavailable'] and
+         trigger.to_state.state not in ['unknown', 'unavailable'] and
+         (trigger.from_state.state | float) > (umbral_activacion | float) and
+         (trigger.to_state.state | float) < (umbral | float) }}
+
+  - condition: state
+    entity_id: !input sensor_desescarche
+    state: "off"
+
+action:
+  - service: counter.increment
+    target:
+      entity_id: "{{ contador_id }}"
+
+  - choose:
+      - conditions: "{{ is_state(temporizador_id, 'idle') }}"
+        sequence:
+          - service: timer.start
+            data:
+              duration: !input tiempo_monitorizacion
+            target:
+              entity_id: "{{ temporizador_id }}"

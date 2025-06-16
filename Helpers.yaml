@@ -1,8 +1,8 @@
-input_number:
+counter:
   mitsubishi_ecodan_paradas_contador:
     name: Contador de paradas Mitsubishi Ecodan
     min: 0
-    max: 20
+    max: 10
     step: 1
     initial: 0
 

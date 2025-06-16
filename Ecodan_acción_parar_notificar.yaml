@@ -1,0 +1,106 @@
+blueprint:
+  name: Apagado Ecodan tras múltiples paradas
+  description: >
+    Se activa al terminar el temporizador de monitorización y, si se han producido suficientes paradas,
+    apaga el dispositivo, notifica al usuario y lo vuelve a encender pasado el tiempo definido.
+    
+        
+    
+    ℹ️ **NOTA:** Es necesario tener creados los siguientes helpers:
+    
+    
+    - Contador de paradas (`counter.[nombre_dispositivo]_paradas_contador`)
+    
+    - Temporizador para la monitorización (`timer.[nombre_dispositivo]_monitor_tiempo`)
+    
+  domain: automation
+  author: https://github.com/limkinZero
+  homeassistant:
+    min_version: 2024.6.0
+  input:
+    switch_dispositivo:
+      name: Switch del dispositivo
+      description: Entidad que apaga y enciende la Ecodan
+      selector:
+        entity:
+          domain: switch
+
+    nombre_dispositivo:
+      name: Nombre del dispositivo
+      description: Nombre amigable del dispositivo (para logs y helpers)
+      default: 'Mitsubishi Ecodan'
+      selector:
+        text:
+
+    notificador:
+      name: Servicio de notificación
+      description: Servicio para enviar una notificación persistente a un teléfono
+      selector:
+        device:
+          integration: mobile_app
+
+    numero_paradas:
+      name: Número de paradas para apagar
+      description: Cuántas paradas deben contarse para apagar el dispositivo
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 10
+
+    tiempo_apagado:
+      name: Tiempo de apagado
+      description: Cuánto tiempo mantener el dispositivo apagado antes de volver a encenderlo
+      default:
+        hours: 2
+        minutes: 0
+        seconds: 0
+      selector:
+        duration:
+
+trigger:
+  - platform: event
+    event_type: timer.finished
+
+variables:
+  device_name: !input nombre_dispositivo
+  numero_paradas: !input numero_paradas
+  notifier_id: !input notificador
+  time_shutdown: !input tiempo_apagado
+  device_normalized_name: "{{ device_name | lower | replace(' ', '_') }}"
+  contador_id: "counter.{{ device_normalized_name }}_paradas_contador"
+  temporizador_id: "timer.{{ device_normalized_name }}_monitor_tiempo"
+
+condition:
+  - condition: template
+    value_template: >
+      {{ trigger.event.data.entity_id == temporizador_id }}
+
+action:
+  - choose:
+      - conditions: "{{ states(contador_id) | int >= numero_paradas }}"
+        sequence:
+          - service: switch.turn_off
+            target:
+              entity_id: !input switch_dispositivo
+
+          - service: notify.mobile_app_{{ device_attr(notifier_id, 'name') | lower | replace(' ', '_') }}
+            data:
+              title: "{{ device_name }} apagado por seguridad"
+              message: "⚠️ Se han detectado {{ states(contador_id) }} paradas. El dispositivo se apagará durante {{ time_shutdown.hours }}h {{ time_shutdown.minutes }}m."
+              data:
+                persistent: true
+                tag: "{{ device_name }}_apagado"
+
+          - delay: !input tiempo_apagado
+
+          - service: switch.turn_on
+            target:
+              entity_id: !input switch_dispositivo
+
+  # 🔄 Reinicio del contador, independientemente del resultado
+  - service: counter.set_value
+    data:
+      value: 0
+    target:
+      entity_id: "{{ contador_id }}"
